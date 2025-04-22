@@ -14,7 +14,6 @@ const images = [
   { src: "/image/banner2.png", alt: "Banner 2" },
 ];
 
-// ✅ ฟังก์ชันนี้อยู่ก่อน Home
 async function getTopDiscountProducts(): Promise<{
   featured: Product[];
   upcoming: Product[];
@@ -36,23 +35,29 @@ export default async function Home() {
   const { featured, upcoming } = await getTopDiscountProducts();
 
   return (
-    <main className="flex min-h-screen flex-col items-center gap-6 p-4 bg-gray-200">
+    <main className="flex min-h-screen flex-col items-center gap-8 px-4 py-6 bg-gradient-to-br from-gray-100 to-gray-200">
       {/* Banner */}
-      <section className="w-full rounded-xl text-white py-4 flex items-center justify-center">
+      <section className="w-full max-w-6xl rounded-2xl overflow-hidden shadow-md">
         <HeroCarousel images={images} />
       </section>
 
-      <AuctionSection
-        title="⏳ Upcoming Auctions"
-        products={upcoming}
-        type="upcoming"
-      />
-      <hr className="text-black" />
-      <AuctionSection
-        title="🔥 Featured Auctions"
-        products={featured}
-        type="featured"
-      />
+      {/* Upcoming Section */}
+      <section className="w-full max-w-6xl bg-white rounded-2xl p-6 shadow-md">
+        <AuctionSection
+          title="⏳ Upcoming Auctions"
+          products={upcoming}
+          type="upcoming"
+        />
+      </section>
+
+      {/* Featured Section */}
+      <section className="w-full max-w-6xl bg-white rounded-2xl p-6 shadow-md">
+        <AuctionSection
+          title="🔥 Featured Auctions"
+          products={featured}
+          type="featured"
+        />
+      </section>
     </main>
   );
 }
