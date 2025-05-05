@@ -14,26 +14,7 @@ const images = [
   { src: "/image/banner2.png", alt: "Banner 2" },
 ];
 
-async function getTopDiscountProducts(): Promise<{
-  featured: Product[];
-  upcoming: Product[];
-}> {
-  const res = await fetch("https://dummyjson.com/products");
-  const data = await res.json();
-
-  const sorted = data.products.sort(
-    (a: Product, b: Product) => b.discountPercentage - a.discountPercentage
-  );
-
-  return {
-    featured: sorted.slice(0, 5),
-    upcoming: sorted.slice(5, 10),
-  };
-}
-
 export default async function Home() {
-  const { featured, upcoming } = await getTopDiscountProducts();
-
   return (
     <main className="flex min-h-screen flex-col items-center gap-8 px-4 py-6 bg-gradient-to-br from-gray-100 to-gray-200">
       {/* Banner */}
@@ -42,22 +23,10 @@ export default async function Home() {
       </section>
 
       {/* Upcoming Section */}
-      <section className="w-full max-w-6xl bg-white rounded-2xl p-6 shadow-md">
-        <AuctionSection
-          title="⏳ Upcoming Auctions"
-          products={upcoming}
-          type="upcoming"
-        />
-      </section>
+      <section className="w-full max-w-6xl bg-white rounded-2xl p-6 shadow-md"></section>
 
       {/* Featured Section */}
-      <section className="w-full max-w-6xl bg-white rounded-2xl p-6 shadow-md">
-        <AuctionSection
-          title="🔥 Featured Auctions"
-          products={featured}
-          type="featured"
-        />
-      </section>
+      <section className="w-full max-w-6xl bg-white rounded-2xl p-6 shadow-md"></section>
     </main>
   );
 }

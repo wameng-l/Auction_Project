@@ -3,17 +3,25 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-interface Product {
-  id: number;
-  title: string;
-  discountPercentage: number;
-  price: number;
-  brand: string;
+interface AuctionProduct {
+  _id: string;
+  product: {
+    name: string;
+    band: string;
+    image: string; // ✅ เพิ่ม image
+  };
+  startingPrice: number;
+  currentBid: number;
+  auctionStart: string;
+  auctionEnd: string;
+  status?: string;
 }
 
 const Auction = () => {
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [allAuctions, setAllAuctions] = useState<AuctionProduct[]>([]);
+  const [filteredAuctions, setFilteredAuctions] = useState<AuctionProduct[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,44 +29,59 @@ const Auction = () => {
   const [brandList, setBrandList] = useState<string[]>([]);
 
   useEffect(() => {
-    const getProducts = async () => {
+    const fetchAuctions = async () => {
       try {
         setLoading(true);
-        const res = await fetch("https://dummyjson.com/products");
+        const res = await fetch("http://localhost:5000/api/auctions");
         const result = await res.json();
-        const products = result.products || [];
-        setAllProducts(products);
-        setFilteredProducts(products);
+        const auctions = (result || []).map((auction: AuctionProduct) => {
+          // ✅ คำนวณ status ตามเวลา
+          const now = new Date();
+          const start = new Date(auction.auctionStart);
+          const end = new Date(auction.auctionEnd);
 
-        const brands = Array.from(
-          new Set(products.map((p: Product) => p.brand).filter(Boolean))
+          let status = "pending";
+          if (now >= start && now <= end) {
+            status = "active";
+          } else if (now > end) {
+            status = "complete";
+          }
+
+          return { ...auction, status };
+        });
+
+        setAllAuctions(auctions);
+        setFilteredAuctions(auctions);
+
+        const bands = Array.from(
+          new Set(
+            auctions.map((a: AuctionProduct) => a.product.band).filter(Boolean)
+          )
         );
-        setBrandList(brands);
+        setBrandList(bands);
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching auctions:", error);
       } finally {
         setLoading(false);
       }
     };
-    getProducts();
+    fetchAuctions();
   }, []);
 
   useEffect(() => {
-    let filtered = allProducts;
+    let filtered = allAuctions;
 
     if (searchTerm) {
       const searchRegex = new RegExp(`\\b${searchTerm}`, "i");
-      filtered = filtered.filter((product) => searchRegex.test(product.title));
+      filtered = filtered.filter((a) => searchRegex.test(a.product.name));
     }
 
     if (checkedBrands.length > 0) {
-      filtered = filtered.filter((product) =>
-        checkedBrands.includes(product.brand)
-      );
+      filtered = filtered.filter((a) => checkedBrands.includes(a.product.band));
     }
 
-    setFilteredProducts(filtered);
-  }, [searchTerm, checkedBrands, allProducts]);
+    setFilteredAuctions(filtered);
+  }, [searchTerm, checkedBrands, allAuctions]);
 
   const handleBrandCheck = (brand: string) => {
     setCheckedBrands((prev) =>
@@ -116,41 +139,61 @@ const Auction = () => {
           </div>
         </aside>
 
-        {/* Product Grid */}
+        {/* Auction Grid */}
         <section className="w-full lg:w-3/4">
           {loading ? (
             <p className="text-center text-gray-600 text-lg">Loading...</p>
-          ) : filteredProducts.length === 0 ? (
+          ) : filteredAuctions.filter((a) => a.status === "active").length ===
+            0 ? (
             <p className="text-center text-red-500 text-sm">
-              No products match your filters.
+              No active auctions match your filters.
             </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white border border-gray-100 rounded-xl p-4 shadow hover:shadow-md transition"
-                >
-                  <h2 className="text-lg font-semibold text-gray-800 mb-1">
-                    {product.title}
-                  </h2>
-                  <p className="text-green-600 text-sm font-medium">
-                    {product.discountPercentage.toFixed(1)}% OFF
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Brand: {product.brand}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Price: ${product.price.toFixed(2)}
-                  </p>
-                  <Link
-                    href={`/Auction/${product.id}`}
-                    className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
+              {filteredAuctions
+                .filter((auction) => auction.status === "active")
+                .map((auction) => (
+                  <div
+                    key={auction._id}
+                    className="bg-white border border-gray-100 rounded-xl p-4 shadow hover:shadow-md transition"
                   >
-                    View Auction
-                  </Link>
-                </div>
-              ))}
+                    {/* ✅ Image */}
+                    {auction.product.image ? (
+                      <img
+                        src={auction.product.image}
+                        alt={auction.product.name}
+                        className="w-full h-48 object-contain mb-3 rounded"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-gray-400 text-xs mb-3 rounded">
+                        No Image
+                      </div>
+                    )}
+
+                    <h2 className="text-lg font-semibold text-gray-800 mb-1">
+                      {auction.product.name}
+                    </h2>
+                    <p className="text-green-600 text-sm font-medium">
+                      Starting Price: ${auction.startingPrice.toFixed(2)}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Brand: {auction.product.band}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Current Bid: ${auction.currentBid.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-gray-500 mb-3 italic">
+                      Auction ends:{" "}
+                      {new Date(auction.auctionEnd).toLocaleString()}
+                    </p>
+                    <Link
+                      href={`/Auction/${auction._id}`}
+                      className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
+                    >
+                      View Auction
+                    </Link>
+                  </div>
+                ))}
             </div>
           )}
         </section>

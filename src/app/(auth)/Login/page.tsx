@@ -13,14 +13,35 @@ const Login = () => {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(""); // reset error ก่อน
 
-    if (username === "user" && password === "123456") {
-      localStorage.setItem("loggedIn", "true"); // จำว่าล็อกอิน
-      router.push(callbackUrl);
-    } else {
-      setError("Invalid username or password.");
+    try {
+      const res = await fetch("http://localhost:5000/api/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // ✅ เก็บข้อมูลลง localStorage
+        localStorage.setItem("loggedIn", "true");
+        localStorage.setItem("userId", data._id);
+        localStorage.setItem("username", data.username);
+
+        // ✅ ไม่ใช้ router.push(callbackUrl) แต่ใช้ reload หน้าแทน!
+        window.location.href = callbackUrl; // หรือ window.location.reload();
+      } else {
+        setError(data.message || "Login failed");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Please try again later.");
     }
   };
 

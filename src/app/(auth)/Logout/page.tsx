@@ -1,14 +1,15 @@
 "use client";
+
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 const Logout = () => {
-  const router = useRouter();
-
   useEffect(() => {
     localStorage.removeItem("loggedIn");
-    router.push("/Login");
-  }, [router]);
+    localStorage.removeItem("userId");
+    localStorage.removeItem("username");
+
+    window.location.href = "/Login"; // รีเฟรช
+  }, []);
 
   return null;
 };
